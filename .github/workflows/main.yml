@@ -1,0 +1,28 @@
+name: Build Mac Executable
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller fastapi uvicorn python-multipart google-genai requests pydantic
+          
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile --name "WarehouseScanner" app.py
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-executable
+          path: dist/MinnieInventoryLogger
