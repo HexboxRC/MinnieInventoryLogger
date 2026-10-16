@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
+import tempfile
 
 def get_base_dir():
     if getattr(sys, 'frozen', False):
@@ -18,25 +19,27 @@ def get_base_dir():
 
 config_path = os.path.join(get_base_dir(), "config.json")
 
-if not os.path.exists(config_path):
-    default_config = {
-        "gemini_api_key": "",
-        "webhook_url": "",
-        "rate_limit_delay_seconds": 4.2,
-        "default_location": "Warehouse",
-        "port": 8000
-    }
-    with open(config_path, "w") as f:
-        json.dump(default_config, f, indent=4)
-    sys.exit(1)
+# 1. Load config.json ONLY if it exists locally (do not exit if missing on Vercel)
+config = {}
+if os.path.exists(config_path):
+    with open(config_path, "r") as f:
+        config = json.load(f)
 
-with open(config_path, "r") as f:
-    config = json.load(f)
+# 2. Populate config from Vercel Environment Variables (with local fallback)
+config["gemini_api_key"] = os.getenv("GEMINI_API_KEY") or config.get("gemini_api_key", "")
+config["webhook_url"] = os.getenv("WEBHOOK_URL") or config.get("webhook_url", "")
+config["default_location"] = os.getenv("DEFAULT_LOCATION") or config.get("default_location", "Warehouse")
+config["rate_limit_delay_seconds"] = float(
+    os.getenv("RATE_LIMIT_DELAY_SECONDS") or config.get("rate_limit_delay_seconds", 4.2)
+)
+config["port"] = int(os.getenv("PORT") or config.get("port", 8000))
 
-GEMINI_API_KEY = config.get("gemini_api_key")
-WEBHOOK_URL = config.get("webhook_url")
-DEFAULT_LOCATION = config.get("default_location", "Warehouse")
-PORT = config.get("port", 8000)
+# 3. Standalone variables (including PORT for local Uvicorn)
+GEMINI_API_KEY = config["gemini_api_key"]
+WEBHOOK_URL = config["webhook_url"]
+DEFAULT_LOCATION = config["default_location"]
+RATE_LIMIT_DELAY = config["rate_limit_delay_seconds"]
+PORT = config["port"]
 
 app = FastAPI()
 client = genai.Client(api_key=GEMINI_API_KEY)
