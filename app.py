@@ -45,7 +45,7 @@ app = FastAPI()
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # -------------------------------------------------------------
-# Pydantic Data Model (Includes Col A: Bin Number)
+# Pydantic Data Model (Includes Col A: Bin Number & Filled By)
 # -------------------------------------------------------------
 class InventoryItem(BaseModel):
     bin_number: str = Field(default="", description="Bin, box, pallet, or tote number/ID if mentioned, e.g., '12', 'A-3', 'Bin 4'")
@@ -54,13 +54,14 @@ class InventoryItem(BaseModel):
     location: str = Field(default="Warehouse", description="Location name, e.g., Warehouse, WOW, Friday's Truck, Serving 1, Kid's Truck")
     expiry_date: str = Field(description="Expiration date formatted as M/D/YY or M/D/YYYY, or 'None'")
     notes: str = Field(description="Variety notes, flavors, specific brands, or remarks")
+    filled_by: str = Field(default="", description="Name of the volunteer or person who filled the bin if mentioned")
 
 @app.post("/extract-audio")
 async def extract_audio(audio: UploadFile):
     audio_bytes = await audio.read()
     try:
         prompt = (
-            f"Extract inventory donation item details from this audio including bin number if spoken. "
+            f"Extract inventory donation item details from this audio including bin number and volunteer name if spoken. "
             f"Default location is '{DEFAULT_LOCATION}'."
         )
         response = client.models.generate_content(
@@ -80,7 +81,8 @@ async def submit_row(
     is_sorted: bool = Form(...),
     location: str = Form(...),
     expiry_date: str = Form(...),
-    notes: str = Form(...)
+    notes: str = Form(...),
+    filled_by: str = Form("")
 ):
     payload = {
         "mic_id": mic_id,
@@ -90,7 +92,8 @@ async def submit_row(
             "is_sorted": is_sorted,
             "location": location,
             "expiry_date": expiry_date,
-            "notes": notes
+            "notes": notes,
+            "filled_by": filled_by
         })
     }
     requests.post(WEBHOOK_URL, json=payload)
@@ -153,17 +156,22 @@ async def get_index():
 
         <form id="inventoryForm">
             <div class="form-group">
-                <label>Bin Number (Col A)</label>
+                <label>Bin Number</label>
                 <input type="text" id="bin_number" placeholder="e.g., Bin 12, 104, A-3">
             </div>
 
             <div class="form-group">
-                <label>Item Name (Col C)</label>
+                <label>Item Name</label>
                 <input type="text" id="item_name" required placeholder="e.g., Cereal, Beans, Snacks">
             </div>
 
             <div class="form-group">
-                <label>Location (Col E)</label>
+                <label>Filled By (Volunteer Name)</label>
+                <input type="text" id="filled_by" placeholder="e.g., John Smith">
+            </div>
+
+            <div class="form-group">
+                <label>Location</label>
                 <select id="location">
                     <option value="Warehouse">Warehouse</option>
                     <option value="WOW">WOW</option>
@@ -175,19 +183,19 @@ async def get_index():
             </div>
 
             <div class="form-group">
-                <label>Expiration Date (Col F)</label>
+                <label>Expiration Date</label>
                 <input type="text" id="expiry_date" placeholder="e.g., 9/1/2026 or None">
             </div>
 
             <div class="form-group">
-                <label>Notes / Variety (Col G)</label>
+                <label>Notes / Variety</label>
                 <input type="text" id="notes" placeholder="e.g., chips, variety pack">
             </div>
 
             <div class="form-group">
                 <div class="checkbox-group">
                     <input type="checkbox" id="is_sorted" checked>
-                    <label for="is_sorted" style="margin:0;">Sorted Item (Col D)</label>
+                    <label for="is_sorted" style="margin:0;">Sorted Item</label>
                 </div>
             </div>
 
@@ -222,6 +230,7 @@ async def get_index():
                             const data = await res.json();
                             document.getElementById('bin_number').value = data.bin_number || '';
                             document.getElementById('item_name').value = data.item_name || '';
+                            document.getElementById('filled_by').value = data.filled_by || '';
                             document.getElementById('location').value = data.location || 'Warehouse';
                             document.getElementById('expiry_date').value = data.expiry_date || '';
                             document.getElementById('notes').value = data.notes || '';
@@ -257,6 +266,7 @@ async def get_index():
                 formData.append("mic_id", currentStation);
                 formData.append("bin_number", document.getElementById('bin_number').value);
                 formData.append("item_name", document.getElementById('item_name').value);
+                formData.append("filled_by", document.getElementById('filled_by').value);
                 formData.append("is_sorted", document.getElementById('is_sorted').checked);
                 formData.append("location", document.getElementById('location').value);
                 formData.append("expiry_date", document.getElementById('expiry_date').value);
@@ -280,4 +290,4 @@ async def get_index():
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
-    uvicorn.run(app, host="0.0.0.0", port=PORT)    
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
