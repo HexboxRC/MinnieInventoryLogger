@@ -53,7 +53,7 @@ class InventoryItem(BaseModel):
     is_sorted: bool = Field(default=True, description="True if item is sorted, False if not sorted")
     location: str = Field(default="Warehouse", description="Location name, e.g., Warehouse, WOW, Friday's Truck, Serving 1, Kid's Truck")
     expiry_date: str = Field(description="Expiration date formatted as M/D/YY or M/D/YYYY, or 'None'")
-    notes: str = Field(description="Variety notes, flavors, specific brands, or remarks")
+    notes: str = Field(default="", description="Variety notes, flavors, specific brands, or remarks") # <--- Added default=""
     filled_by: str = Field(default="", description="Name of the volunteer or person who filled the bin if mentioned")
 
 @app.post("/extract-audio")
@@ -188,7 +188,7 @@ async def get_index():
             </div>
 
             <div class="form-group">
-                <label>Notes / Variety</label>
+                <label>Notes / Variety (Optional)</label>
                 <input type="text" id="notes" placeholder="e.g., chips, variety pack">
             </div>
 
