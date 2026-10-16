@@ -51,7 +51,7 @@ class InventoryItem(BaseModel):
     bin_number: str = Field(default="", description="Bin, box, pallet, or tote number/ID if mentioned, e.g., '12', 'A-3', 'Bin 4'")
     item_name: str = Field(description="Item name, e.g. Cereal, Misc, Snacks, Pasta, Beans, EMPTY")
     is_sorted: bool = Field(default=True, description="True if item is sorted, False if not sorted")
-    location: str = Field(default="Warehouse", description="Location name, e.g., Warehouse, WOW, Truck")
+    location: str = Field(default="Warehouse", description="Location name, e.g., Warehouse, WOW, Friday's Truck, Serving 1, Kid's Truck")
     expiry_date: str = Field(description="Expiration date formatted as M/D/YY or M/D/YYYY, or 'None'")
     notes: str = Field(description="Variety notes, flavors, specific brands, or remarks")
 
@@ -168,6 +168,9 @@ async def get_index():
                     <option value="Warehouse">Warehouse</option>
                     <option value="WOW">WOW</option>
                     <option value="Truck">Truck</option>
+                    <option value="Friday's Truck">Friday's Truck</option>
+                    <option value="Serving 1">Serving 1</option>
+                    <option value="Kid's Truck">Kid's Truck</option>
                 </select>
             </div>
 
