@@ -80,8 +80,8 @@ async def submit_row(
     item_name: str = Form(...),
     is_sorted: bool = Form(...),
     location: str = Form(...),
-    expiry_date: str = Form(...),
-    notes: str = Form(...),
+    expiry_date: str = Form(""),  # <--- Changed to Form("") to make optional
+    notes: str = Form(""),        # <--- Changed to Form("") to make optional
     filled_by: str = Form("")
 ):
     payload = {
